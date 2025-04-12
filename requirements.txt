@@ -1,0 +1,7 @@
+krakenex==2.1.0
+pykrakenapi==0.3.1
+pandas==2.0.0
+python-dotenv==1.0.0
+numpy==1.24.3
+matplotlib==3.7.1
+schedule==1.2.0
