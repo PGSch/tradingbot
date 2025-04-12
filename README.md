@@ -8,7 +8,7 @@ A Python-based cryptocurrency trading bot using the Kraken exchange API. This bo
 - **Strategy Implementation**: Moving Average Crossover strategy (extensible for more)
 - **Data Visualization**: Visualize trading performance and signals
 - **Configurable**: Easily adjust parameters via environment variables
-- **Logging**: Comprehensive logging system for tracking bot activities
+- **Advanced Logging**: Comprehensive multi-level logging system for tracking all bot activities
 
 ## Prerequisites
 
@@ -91,6 +91,50 @@ python main.py --backtest --start 2023-01-01 --end 2023-12-31
 - `--start`: Start date for backtest (format: YYYY-MM-DD)
 - `--end`: End date for backtest (format: YYYY-MM-DD)
 - `--no-plot`: Disable plotting in backtest mode
+
+## Logging System
+
+The bot includes a comprehensive logging system to help you stay informed about all activities:
+
+### Log Levels
+
+- **DEBUG**: Detailed information, typically useful for diagnosing problems
+- **INFO**: Confirmation that things are working as expected
+- **WARNING**: Indication that something unexpected happened, but the application is still working
+- **ERROR**: Due to a more serious problem, the application couldn't perform a function
+- **CRITICAL**: A serious error indicating the application may be unable to continue running
+
+### Log Files
+
+Logs are stored in the `logs/` directory with the following naming conventions:
+
+- `main.log` & `trading_bot.log`: Daily rotating logs that contain regular information
+- `main_detailed_[timestamp].log` & `trading_bot_detailed_[timestamp].log`: Detailed logs with debug information
+
+### Configuring Logging
+
+You can adjust logging verbosity using the `--verbose` flag when running the bot:
+
+```bash
+python main.py --paper --verbose
+```
+
+You can also customize logging behavior in the `.env` file:
+
+```
+# Logging configuration
+LOG_LEVEL=INFO       # Can be DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_TO_FILE=true     # Enable/disable file logging
+LOG_DIR=logs         # Directory for log files
+```
+
+### Monitoring Logs
+
+For real-time monitoring of bot activity, you can use:
+
+```bash
+tail -f logs/trading_bot.log
+```
 
 ## Project Structure
 
