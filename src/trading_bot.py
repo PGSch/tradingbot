@@ -2,6 +2,7 @@ import os
 import time
 import schedule
 import logging
+import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 from typing import Dict, Optional, Any, Union
@@ -12,6 +13,7 @@ from .api.kraken_client import KrakenClient
 from .strategies.moving_average import MovingAverageCrossover
 from .utils.logger import setup_logger, log_exception, log_trade_execution, log_strategy_signal
 from .utils.data_utils import save_data, load_data, plot_strategy, cleanup_data_files, merge_data_files
+from .utils.financial_utils import ProfitLossTracker, format_currency, calculate_trade_pnl
 
 class TradingBot:
     """
@@ -88,6 +90,9 @@ class TradingBot:
         self.last_action = 'none'  # Last trade action (buy/sell/none)
         self.data_cache = None  # Cache for the most recent market data
         self.trades_history = []  # List to track all trades executed by this bot instance
+        
+        # Initialize the profit/loss tracker
+        self.pl_tracker = ProfitLossTracker()
         
         self.logger.info(f"Trading bot initialized for {self.trading_pair} with ID: {self.bot_id}")
         
@@ -341,6 +346,13 @@ class TradingBot:
                     'order_id': order_id
                 })
                 
+                # Update balance and log financial metrics after trade execution
+                try:
+                    balance = self.get_account_balance()
+                    self.logger.debug(f"Account balance updated after BUY: {balance}")
+                except Exception as e:
+                    self.logger.warning(f"Could not update balance after trade: {e}")
+                
             except Exception as e:
                 # Handle and log any exceptions that occur during trade execution
                 log_exception(self.logger, e, f"Buy order execution failed")
@@ -409,6 +421,13 @@ class TradingBot:
                     'price': current_price,
                     'order_id': order_id
                 })
+                
+                # Update balance and log financial metrics after trade execution
+                try:
+                    balance = self.get_account_balance()
+                    self.logger.debug(f"Account balance updated after SELL: {balance}")
+                except Exception as e:
+                    self.logger.warning(f"Could not update balance after trade: {e}")
                 
             except Exception as e:
                 # Handle and log any exceptions that occur during trade execution
@@ -720,6 +739,14 @@ class TradingBot:
         try:
             # Query the exchange API for account balance
             balance = self.client.get_account_balance()
+            
+            # Update the profit/loss tracker with the new balance
+            if balance and not isinstance(balance, dict) or "error" not in balance:
+                self.pl_tracker.update_balance(balance)
+                
+                # Log current financial metrics including profit/loss
+                self.pl_tracker.log_metrics(self.logger)
+            
             return balance
         except Exception as e:
             # Handle and log any exceptions during balance retrieval
