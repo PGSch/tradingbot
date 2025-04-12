@@ -11,7 +11,7 @@ import uuid
 from .api.kraken_client import KrakenClient
 from .strategies.moving_average import MovingAverageCrossover
 from .utils.logger import setup_logger, log_exception, log_trade_execution, log_strategy_signal
-from .utils.data_utils import save_data, load_data, plot_strategy
+from .utils.data_utils import save_data, load_data, plot_strategy, cleanup_data_files, merge_data_files
 
 class TradingBot:
     """
@@ -632,6 +632,11 @@ class TradingBot:
                 save_data(data, f"data/market_{timestamp}.csv")
                 self.logger.debug(f"Market data saved to data/market_{timestamp}.csv")
                 
+                # Perform data cleanup to prevent accumulation of CSV files
+                cleaned_files = cleanup_data_files('data/', max_files=100, days_to_keep=7)
+                if cleaned_files > 0:
+                    self.logger.info(f"Data cleanup: removed {cleaned_files} old data files")
+                
                 # Get current account status in live mode
                 if mode == 'live':
                     try:
@@ -684,6 +689,18 @@ class TradingBot:
             buys = sum(1 for t in self.trades_history if t['type'] == 'buy')
             sells = sum(1 for t in self.trades_history if t['type'] == 'sell')
             self.logger.info(f"Trading session summary: {num_trades} trades ({buys} buys, {sells} sells)")
+        
+        # Perform data cleanup to remove old files
+        cleaned_files = cleanup_data_files('data/', max_files=100, days_to_keep=7)
+        if cleaned_files > 0:
+            self.logger.info(f"Data cleanup during stop: removed {cleaned_files} old data files")
+            
+        # Consider merging remaining data files if there are many of them
+        if os.getenv('MERGE_DATA_ON_STOP', 'false').lower() == 'true':
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            merge_result = merge_data_files('data/', f'merged_market_{timestamp}.csv')
+            if merge_result:
+                self.logger.info(f"Market data files merged into merged_market_{timestamp}.csv")
         
     def get_account_balance(self) -> Dict:
         """
